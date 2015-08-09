@@ -1,4 +1,3 @@
-// entry point to the Janus ()
 package config
 
 import (

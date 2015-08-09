@@ -1,9 +1,12 @@
-// entry point to the Janus ()
 package logger
 
 import (
     "log"
     "testing" //import go package for testing related functionality
+)
+
+var (
+    result *log.Logger
 )
 
 func TestGetLoggerReturnType(t *testing.T) {
@@ -26,4 +29,13 @@ func TestGetLoggerSingletone(t *testing.T) {
     } else {
         t.Log("passed")
     }
+}
+
+func BenchmarkGetLogger(b *testing.B) {
+    var l *log.Logger
+    for i := 0; i < b.N; i++ {
+        l = GetLogger()
+    }
+    // this trick need for avoid compiler optimization
+    result = l
 }

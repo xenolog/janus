@@ -1,4 +1,4 @@
-// entry point to the Janus ()
+// Singletone logger
 package logger
 
 import (

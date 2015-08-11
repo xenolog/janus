@@ -77,17 +77,21 @@ func runTest(c *cli.Context) {
     var err error
     var abs_path string
     Log.Printf("Test started")
-    Log.Printf("config file is: '%s'", c.GlobalString("config"))
+    // Log.Printf("config file is: '%s'", c.GlobalString("config"))
     if abs_path, err = filepath.Abs(c.GlobalString("config")); err != nil {
         Log.Printf("Wrong config path: '%s'", err)
         return
     } else {
-        Log.Printf("Loaded config '%s'", c.GlobalString("config"))
+        Log.Printf("Config '%s' will be loaded.", c.GlobalString("config"))
     }
 
-    cfg, _ := config.New(abs_path)
-    //Log.Printf("config: '%s'", &cfg.Config) //["xenolog"])
-    Log.Printf("config: '%s'", &cfg.C) //["xenolog"])
-    //Log.Printf("xxx: '%s'", cfg.users["xenolog"].irc.username)
+    cfg, err := config.New(abs_path)
+    if err != nil {
+        Log.Printf("Config processing error: %s", err)
+    } else {
+        Log.Printf("config: '%s'", cfg)
+        Log.Printf("xxx: '%s'", cfg.Users["xenolog"].Irc.Username)
+        Log.Printf("xxx: '%s'", cfg.Users["xenolog"].Irc.Password)
+    }
     Log.Printf("Test completed")
 }

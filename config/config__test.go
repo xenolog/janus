@@ -4,7 +4,7 @@ import (
     "testing" //import go package for testing related functionality
 )
 
-const config = `
+const config_test_yaml = `
 ---
 janus:
   slack_username: janus
@@ -14,7 +14,7 @@ users:
     slack:
       nickname: user_1
     irc:
-      usename: user_1
+      username: user_1
       password: passwd1111
       nicknames:
         - user_1
@@ -25,7 +25,7 @@ users:
     slack:
       nickname: user_2
     irc:
-      usename: user_2
+      username: user_2
       password: passwd2222
       nicknames:
         - helicopter
@@ -34,25 +34,39 @@ users:
         - user_hel_3
 `
 
-func TestParseConfig(t *testing.T) {
-    var config Config
-
-    config =
-
-
-    //     t.Error("GetLogger should return *log.Logger.")
-    // case *log.Logger:
-    //     t.Log("passed")
-    // }
+// create new type for mock file read
+type Config4test struct {
+    Config
 }
 
-// func TestGetLoggerSingletone(t *testing.T) {
-//     var l1, l2 *log.Logger
-//     l1 = GetLogger()
-//     l2 = GetLogger()
-//     if l1 != l2 {
-//         t.Error("objects, returned by GetLogger is not an singletone.")
-//     } else {
-//         t.Log("passed")
-//     }
-// }
+// mock reload() for get pre-defined data fixture
+func (c *Config4test) reload() error {
+    c.raw_config = []byte(config_test_yaml)
+    // emulate parse()
+    if err := c.Config.parse(); err != nil {
+        return err
+    }
+    return nil
+}
+
+func TestParseConfig(t *testing.T) {
+    var (
+        cfg *Config4test
+        err error
+    )
+
+    cfg = new(Config4test)
+    cfg.path = "required_but_unused_string"
+
+    if err = cfg.reload(); err != nil {
+        t.Errorf("Yaml parse failed. '%s'", err)
+    }
+
+    if cfg.Janus.Slack_username != "janus" {
+        t.Errorf("Yaml parse failed. '%s'", cfg.raw_config)
+    }
+
+    if len(cfg.Users) != 2 {
+        t.Errorf("Yaml parse failed. 'users' section not found.'%s'", cfg.raw_config)
+    }
+}

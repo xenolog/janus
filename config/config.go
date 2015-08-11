@@ -1,68 +1,63 @@
 package config
 
 import (
-    "github.com/xenolog/janus/logger"
+    "fmt"
     "gopkg.in/yaml.v2"
     "io/ioutil"
-    "log"
 )
+
+type configType struct {
+}
 
 type Config struct {
     path       string // given path to the config file
     raw_config []byte // temporary buffer for storing raw config
-    C          struct {
-        janus struct {
-            slack_username  string
-            slack_api_token string
+    //loaded from yaml
+    Janus struct {
+        Slack_username  string
+        Slack_api_token string
+    }
+    Users map[string]struct {
+        Slack struct {
+            Nickname string
         }
-        users map[string]struct {
-            slack struct {
-                nickname string
-            }
-            irc struct {
-                username  string
-                password  string
-                nicknames []string
-            }
+        Irc struct {
+            Username  string
+            Password  string
+            Nicknames []string
         }
     }
 }
 
-var (
-    ll  *log.Logger
-    cfg Config
-)
+var cfg *Config
 
-// func (c *Config) Users() *UserConfig {
-//     return c.Config.users
-// }
-
+// read config from yaml file and store in into intermediate beffer as raw
 func (c *Config) read() error {
-    var err error
+    var (
+        err error
+    )
     if c.raw_config, err = ioutil.ReadFile(c.path); err != nil {
-        return err
+        return fmt.Errorf("Can't read config '%s'", c.path)
     }
     return nil
 }
 
+// get config from intermediate buffer, parse it and store in *Config
 func (c *Config) parse() error {
     var err error
 
     if len(c.raw_config) == 0 {
-        ll.Printf("Can't parse empty config")
-        return err //error{"xxx"}
+        return fmt.Errorf("Can't parse empty config")
     }
-    //ll.Printf("X: %s", c.raw_config)
 
-    if err = yaml.Unmarshal(c.raw_config, &c.C); err != nil {
-        ll.Printf("Can't parse config file: %s", err)
-        return err
+    if err = yaml.Unmarshal(c.raw_config, c); err != nil {
+        return fmt.Errorf("Can't parse config file: %s", err)
     }
     c.raw_config = nil
-    ll.Printf("C: %s", c.C)
     return nil
 }
 
+// load config from yaml file and parse it
 func (c *Config) reload() error {
     if err := cfg.read(); err != nil {
         return err
@@ -73,13 +68,13 @@ func (c *Config) reload() error {
     return nil
 }
 
+// return singletone config data structure
 func New(path string) (*Config, error) {
     cfg.path = path
     err := cfg.reload()
-    return &cfg, err
+    return cfg, err
 }
 
 func init() {
-    ll = logger.GetLogger()
-    cfg = Config{} // &Config{path: path}
+    cfg = new(Config)
 }

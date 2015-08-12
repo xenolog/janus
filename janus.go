@@ -5,7 +5,6 @@ import (
     "github.com/codegangsta/cli"
     "github.com/xenolog/janus/config"
     "github.com/xenolog/janus/logger"
-    "log"
     "os"
     "path/filepath"
 )
@@ -15,7 +14,7 @@ const (
 )
 
 var (
-    Log *log.Logger
+    Log *logger.Logger
     App *cli.App
     err error
 )
@@ -26,7 +25,7 @@ func runBot(c *cli.Context) {
 
 func init() {
     // Setup logger
-    Log = logger.GetLogger()
+    Log = logger.New()
 
     // Configure CLI flags and commands
     App = cli.NewApp()

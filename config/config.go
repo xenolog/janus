@@ -6,27 +6,32 @@ import (
     "io/ioutil"
 )
 
-type configType struct {
+type SlackConfig struct {
+    // We used underscored field names here, because config stored in yaml format
+    // and yaml parser required conformity between fields into yaml file and structure
+    Slack_api_token      string
+    Slack_username       string
+    Slack_nickname       string
+    Slack_channel_prefix string
+}
+
+type UserConfig struct {
+    Slack struct {
+        Nickname string
+    }
+    Irc struct {
+        Username  string
+        Password  string
+        Nicknames []string
+    }
 }
 
 type Config struct {
     path       string // given path to the config file
     raw_config []byte // temporary buffer for storing raw config
     //loaded from yaml
-    Janus struct {
-        Slack_username  string
-        Slack_api_token string
-    }
-    Users map[string]struct {
-        Slack struct {
-            Nickname string
-        }
-        Irc struct {
-            Username  string
-            Password  string
-            Nicknames []string
-        }
-    }
+    Janus SlackConfig
+    Users map[string]UserConfig
 }
 
 var cfg *Config

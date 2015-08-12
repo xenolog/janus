@@ -3,10 +3,11 @@ package main
 
 import (
     "github.com/codegangsta/cli"
-    _ "github.com/xenolog/janus/config"
+    "github.com/xenolog/janus/config"
     "github.com/xenolog/janus/logger"
     "log"
     "os"
+    "path/filepath"
 )
 
 const (
@@ -39,7 +40,7 @@ func init() {
             Usage: "Enable debug mode. Show more output",
         },
         cli.StringFlag{
-            Name:  "c, config",
+            Name:  "config, c",
             Usage: "Specify config file (default: ./janus.jaml)",
         },
     }
@@ -51,6 +52,10 @@ func init() {
         Name:   "control",
         Usage:  "Manipulate already started bots.",
         Action: runBot,
+    }, {
+        Name:   "test",
+        Usage:  "Just run smaLog test.",
+        Action: runTest,
     },
     }
     App.Before = func(c *cli.Context) error {
@@ -66,4 +71,27 @@ func init() {
 func main() {
     App.RunAndExitOnError()
 
+}
+
+func runTest(c *cli.Context) {
+    var err error
+    var abs_path string
+    Log.Printf("Test started")
+    // Log.Printf("config file is: '%s'", c.GlobalString("config"))
+    if abs_path, err = filepath.Abs(c.GlobalString("config")); err != nil {
+        Log.Printf("Wrong config path: '%s'", err)
+        return
+    } else {
+        Log.Printf("Config '%s' will be loaded.", c.GlobalString("config"))
+    }
+
+    cfg, err := config.New(abs_path)
+    if err != nil {
+        Log.Printf("Config processing error: %s", err)
+    } else {
+        Log.Printf("config: '%s'", cfg)
+        Log.Printf("xxx: '%s'", cfg.Users["xenolog"].Irc.Username)
+        Log.Printf("xxx: '%s'", cfg.Users["xenolog"].Irc.Password)
+    }
+    Log.Printf("Test completed")
 }

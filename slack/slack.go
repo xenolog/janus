@@ -5,6 +5,7 @@ import (
     slacklib "github.com/abourget/slack"
     "github.com/xenolog/janus/config"
     "github.com/xenolog/janus/logger"
+    "sync"
 )
 
 type Slack struct {
@@ -13,6 +14,8 @@ type Slack struct {
     slackConfig      *config.SlackConfig
     Api              *slacklib.Client
     Rtm              *slacklib.RTM
+    rtmCall          *sync.Mutex
+    apiCall          *sync.Mutex
 }
 
 var (
@@ -26,45 +29,67 @@ func (s *Slack) eventLoop() error {
     }
     for {
         select {
-        case msg := <-s.Rtm.IncomingEvents:
-            log.Info("Event Received: ")
-            switch ev := msg.Data.(type) {
+        case ev := <-s.Rtm.IncomingEvents:
+            log.Info("Event Received: %v", ev.Data)
+            switch evt := ev.Data.(type) {
             case *slacklib.HelloEvent:
                 // Ignore hello
-                log.Info("Hello event: %s", msg.Data)
+                log.Info("Hello event: %v", ev.Data)
 
             case *slacklib.ConnectedEvent:
-                log.Info("Infos:", ev.Info)
-                log.Info("Connection counter: %d", ev.ConnectionCount)
+                log.Info("Infos:", evt.Info)
+                log.Info("Connection counter: %d", evt.ConnectionCount)
                 //s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "#general"))
                 s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "C08RDQTFY"))
 
             case *slacklib.MessageEvent:
-                log.Info("Message: %v", ev)
-
-            case *slacklib.PresenceChangeEvent:
-                log.Info("Presence Change: %v", ev)
+                log.Info("Message: %v", evt)
+                // if private message given
+                log.Info("Presence Change: %v", evt)
 
             case *slacklib.LatencyReport:
-                log.Info("Current latency: %v", ev.Value)
+                //log.Info("Current latency: %v", evt.Value)
 
             case *slacklib.SlackWSError:
-                log.Warn("Slack error: %d - %s", ev.Code, ev.Msg)
+                log.Warn("Slack error: %d - %v", evt.Code, evt.Msg)
 
             default:
                 // Ignore other events..
-                log.Warn("Unexpected event: %v", msg.Data)
+                log.Warn("Unexpected event: %v", ev.Data)
             }
         }
     }
 }
 
-func (s *Slack) MainLoop() error {
-    go s.eventLoop()
+func (s *Slack) addChannelToList() error {
+
+    return nil
+}
+
+func (s *Slack) updateChannelList() error {
+    s.ApiCall.Lock()
+    defer s.ApiCall.Unlock()
+    s.Api.Ge
+    return nil
+}
+
+// Periodically update Channel-list
+func (s *Slack) ChannelLoop() error {
+    // get Channels from s.Rtm.GetInfo
+    for {
+        time.sleep(60)
+        go s.updateChannelList()
+    }
+    return nil
+}
+
+func (s *Slack) MessageLoop() error {
+    s.eventLoop()
     return nil
 }
 
 func (s *Slack) Connect() error {
+    //todo: check for alredy connected
     s.Api = slacklib.New(s.slackConfig.Slack_api_token)
     s.Api.SetDebug(true)
     s.Rtm = s.Api.NewRTM()
@@ -77,8 +102,6 @@ func New(config *config.SlackConfig) *Slack {
         mainSlack.slackConfig = config
         mainSlack.configured = true
     }
-    //todo: Also may be used form:
-    // log.SetOutput(io.MultiWriter(os.Stdout, logFile))
     return mainSlack
 }
 

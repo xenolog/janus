@@ -9,7 +9,7 @@ import (
     "github.com/xenolog/janus/slack"
     "os"
     "path/filepath"
-    "time"
+    "sync"
 )
 
 const (
@@ -84,6 +84,7 @@ func runBot(c *cli.Context) {
         cfg      *config.Config
         abs_path string
         err      error
+        wg       sync.WaitGroup
     )
     abs_path, err = getConfigAbsName(c.GlobalString("config"))
     if err != nil {
@@ -101,8 +102,21 @@ func runBot(c *cli.Context) {
 
     Sapi = slack.New(&cfg.Janus)
     Sapi.Connect()
-    Sapi.MainLoop()
-    time.Sleep(30 * time.Second)
+    // start Messsage loop
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        Sapi.MessageLoop()
+    }()
+    // start Channel info loop
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        Sapi.ChannelLoop()
+    }()
+    // all loops started
+    wg.Wait()
+
 }
 
 func runTest(c *cli.Context) {

@@ -14,7 +14,7 @@ import (
 type Slack struct {
     configured       bool
     eventLoopRunning bool
-    slackConfig      *config.SlackConfig
+    janusConfig      *config.JanusConfig
     Api              *slacklib.Client
     Rtm              *slacklib.RTM
     rtmCall          sync.Mutex
@@ -94,7 +94,7 @@ func (s *Slack) updateChannelList() error {
 func (s *Slack) ChannelLoop() error {
     // get Channels from s.Rtm.GetInfo
     for {
-        time.Sleep(30 * time.Second)
+        time.Sleep(s.janusConfig.Slack.Channel_update_interval * time.Second)
         go s.updateChannelList()
     }
     return nil
@@ -107,7 +107,7 @@ func (s *Slack) MessageLoop() error {
 
 func (s *Slack) Connect() error {
     //todo: check for alredy connected
-    s.Api = slacklib.New(s.slackConfig.Slack_api_token)
+    s.Api = slacklib.New(s.janusConfig.Slack.Api_token)
     s.Api.SetDebug(true)
     s.Rtm = s.Api.NewRTM()
     go mainSlack.Rtm.ManageConnection()
@@ -118,9 +118,9 @@ func (s *Slack) init() {
     s.rooms = data.NewRooms()
 }
 
-func New(config *config.SlackConfig) *Slack {
+func New(config *config.JanusConfig) *Slack {
     if !mainSlack.configured {
-        mainSlack.slackConfig = config
+        mainSlack.janusConfig = config
         mainSlack.configured = true
     }
     return mainSlack

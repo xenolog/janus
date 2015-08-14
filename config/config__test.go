@@ -7,8 +7,13 @@ import (
 const config_test_yaml = `
 ---
 janus:
-  slack_username: janus
-  slack_api_token: token-aaaBBBccc
+  slack:
+    api_token: xxx-9034xxx3-vArCxxxaa3dm31xxxFgPH
+    nickname: janus-bot
+    public_channel_prefix: j_
+    private_channel_prefix: j_
+    direct_channel_prefix: d_
+    channel_update_interval: 60
 users:
   user1:
     slack:
@@ -62,8 +67,12 @@ func TestParseConfig(t *testing.T) {
         t.Errorf("Yaml parse failed. '%s'", err)
     }
 
-    if cfg.Janus.Slack_username != "janus" {
+    if cfg.Janus.Slack.Nickname != "janus-bot" {
         t.Errorf("Yaml parse failed. '%s'", cfg.raw_config)
+    }
+
+    if cfg.Janus.Slack.Channel_update_interval != 60 {
+        t.Errorf("Yaml parse failed. Channel_update_interval should be int")
     }
 
     if len(cfg.Users) != 2 {

@@ -4,17 +4,21 @@ import (
     "fmt"
     "gopkg.in/yaml.v2"
     "io/ioutil"
+    "time"
 )
 
-type SlackConfig struct {
+type JanusConfig struct {
     // We used underscored field names here, because config stored in yaml format
     // and yaml parser required conformity between fields into yaml file and structure
-    Slack_api_token      string
-    Slack_username       string
-    Slack_nickname       string
-    Slack_channel_prefix string
+    Slack struct {
+        Api_token               string
+        Nickname                string
+        Public_channel_prefix   string
+        Private_channel_prefix  string
+        Direct_channel_prefix   string
+        Channel_update_interval time.Duration
+    }
 }
-
 type UserConfig struct {
     Slack struct {
         Nickname string
@@ -30,7 +34,7 @@ type Config struct {
     path       string // given path to the config file
     raw_config []byte // temporary buffer for storing raw config
     //loaded from yaml
-    Janus SlackConfig
+    Janus JanusConfig
     Users map[string]UserConfig
 }
 

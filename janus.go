@@ -2,11 +2,14 @@
 package main
 
 import (
+    "fmt"
     "github.com/codegangsta/cli"
     "github.com/xenolog/janus/config"
     "github.com/xenolog/janus/logger"
+    "github.com/xenolog/janus/slack"
     "os"
     "path/filepath"
+    "sync"
 )
 
 const (
@@ -18,10 +21,6 @@ var (
     App *cli.App
     err error
 )
-
-func runBot(c *cli.Context) {
-    Log.Printf("Not implemented :(")
-}
 
 func init() {
     // Setup logger
@@ -69,6 +68,54 @@ func init() {
 
 func main() {
     App.RunAndExitOnError()
+}
+
+func getConfigAbsName(cfgname string) (string, error) {
+    abs_path, err := filepath.Abs(cfgname)
+    if err != nil {
+        return "", fmt.Errorf("Wrong config path: '%s'", err)
+    }
+    return abs_path, nil
+}
+
+func runBot(c *cli.Context) {
+    var (
+        Sapi     *slack.Slack
+        cfg      *config.Config
+        abs_path string
+        err      error
+        wg       sync.WaitGroup
+    )
+    abs_path, err = getConfigAbsName(c.GlobalString("config"))
+    if err != nil {
+        Log.Error("Wrong config path: '%s'", err)
+        return
+    } else {
+        Log.Printf("Config '%s' will be loaded.", c.GlobalString("config"))
+    }
+
+    cfg, err = config.New(abs_path)
+    if err != nil {
+        Log.Error("Config processing error: %s", err)
+        return
+    }
+
+    Sapi = slack.New(&cfg.Janus)
+    Sapi.Connect()
+    // start Messsage loop
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        Sapi.MessageLoop()
+    }()
+    // start Channel info loop
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        Sapi.ChannelLoop()
+    }()
+    // all loops started
+    wg.Wait()
 
 }
 
@@ -76,8 +123,8 @@ func runTest(c *cli.Context) {
     var err error
     var abs_path string
     Log.Log("Test started")
-    // Log.Printf("config file is: '%s'", c.GlobalString("config"))
-    if abs_path, err = filepath.Abs(c.GlobalString("config")); err != nil {
+
+    if abs_path, err = getConfigAbsName(c.GlobalString("config")); err != nil {
         Log.Error("Wrong config path: '%s'", err)
         return
     } else {

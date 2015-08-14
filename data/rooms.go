@@ -41,6 +41,7 @@ type RoomsType struct {
     // NameToIrc   map[string]*RoomT
 }
 
+// DeleteBySlackId -- remove room record with given SlackID
 func (r *RoomsType) DeleteBySlackId(id string) error {
     r.Lock()
     defer r.Unlock()
@@ -57,6 +58,8 @@ func (r *RoomsType) DeleteBySlackId(id string) error {
     return nil
 }
 
+// GetBySlackId -- find room record with given SlackID and return pointer to it.
+// Be carefully, use Lock()/Unlock() before and after use it for exclusive access
 func (r *RoomsType) GetBySlackId(id string) (*RoomT, error) {
     // Locks should be used before call this method for avoiding deadlocks
     // r.Lock()
@@ -68,7 +71,8 @@ func (r *RoomsType) GetBySlackId(id string) (*RoomT, error) {
     return room, nil
 }
 
-func (r *RoomsType) CreateOrUpdateRoom(id string, name string, access byte) {
+// PutBySlackId -- create new room record or modify existing with given SlackID
+func (r *RoomsType) PutBySlackId(id string, name string, access byte) {
     var (
         room *RoomT
         aaa  byte
@@ -94,6 +98,7 @@ func (r *RoomsType) CreateOrUpdateRoom(id string, name string, access byte) {
     }
 }
 
+// Make initialization. Should be used once.
 func (r *RoomsType) init() {
     r.AllowedAccess = map[byte]bool{'G': true, 'P': true, 'D': true}
     r.ByName = make(map[string]*RoomT)
@@ -104,10 +109,13 @@ var (
     Rooms *RoomsType
 )
 
+// NewRooms() -- return rooms storage. Rooms storage is a singletone,
+// that created at start Janus.
 func NewRooms() *RoomsType {
     return Rooms
 }
 
+////////
 func init() {
     Rooms = new(RoomsType)
     Rooms.init()

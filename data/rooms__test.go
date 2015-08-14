@@ -6,8 +6,8 @@ import (
 
 func TestCreateAndGetRoom(t *testing.T) {
     r := NewRooms()
-    r.CreateOrUpdateRoom("P540215", "Test_room_1", 'G')
-    r.CreateOrUpdateRoom("P675434", "Test_room_2", 'G')
+    r.PutBySlackId("P540215", "Test_room_1", 'G')
+    r.PutBySlackId("P675434", "Test_room_2", 'G')
     m, err := r.GetBySlackId("P675434")
     if err != nil {
         t.Fatalf("Can't get Room by ID: %v", err)
@@ -21,8 +21,8 @@ func TestCreateAndGetRoom(t *testing.T) {
 
 func TestGettingNonExistingRoom(t *testing.T) {
     r := NewRooms()
-    r.CreateOrUpdateRoom("P540215", "Test_room_1", 'G')
-    r.CreateOrUpdateRoom("P675434", "Test_room_2", 'G')
+    r.PutBySlackId("P540215", "Test_room_1", 'G')
+    r.PutBySlackId("P675434", "Test_room_2", 'G')
     _, err := r.GetBySlackId("XXXXXXX")
     if err != nil {
         t.Log("Pass")
@@ -33,7 +33,7 @@ func TestGettingNonExistingRoom(t *testing.T) {
 
 func TestDeleteExistingRoom(t *testing.T) {
     r := NewRooms()
-    r.CreateOrUpdateRoom("P675434", "Test_room_2", 'G')
+    r.PutBySlackId("P675434", "Test_room_2", 'G')
     err := r.DeleteBySlackId("P675434")
     if err != nil {
         t.Error("Can't delete Room by ID: %v", err)
@@ -44,7 +44,7 @@ func TestDeleteExistingRoom(t *testing.T) {
 
 func TestDeleteNonExistingRoom(t *testing.T) {
     r := NewRooms()
-    r.CreateOrUpdateRoom("P675434", "Test_room_2", 'G')
+    r.PutBySlackId("P675434", "Test_room_2", 'G')
     err := r.DeleteBySlackId("XXXXXXX")
     if err != nil {
         t.Log("Pass")

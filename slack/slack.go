@@ -72,12 +72,12 @@ func (s *Slack) updateChannelList() error {
     s.apiCall.Unlock()
     if errC == nil {
         for _, ch := range chs {
-            s.rooms.CreateOrUpdateRoom(ch.Id, ch.Name, 'G')
+            s.rooms.PutBySlackId(ch.Id, ch.Name, 'G')
         }
     }
     if errG == nil {
         for _, gr := range grs {
-            s.rooms.CreateOrUpdateRoom(gr.Id, gr.Name, 'P')
+            s.rooms.PutBySlackId(gr.Id, gr.Name, 'P')
         }
     }
     log.Info("Rooms: %v", s.rooms)

@@ -4,18 +4,22 @@ import (
     "fmt"
     slacklib "github.com/abourget/slack"
     "github.com/xenolog/janus/config"
+    "github.com/xenolog/janus/data"
     "github.com/xenolog/janus/logger"
     "sync"
+    "time"
 )
 
+///
 type Slack struct {
     configured       bool
     eventLoopRunning bool
     slackConfig      *config.SlackConfig
     Api              *slacklib.Client
     Rtm              *slacklib.RTM
-    rtmCall          *sync.Mutex
-    apiCall          *sync.Mutex
+    rtmCall          sync.Mutex
+    apiCall          sync.Mutex
+    rooms            *data.RoomsType
 }
 
 var (
@@ -61,15 +65,28 @@ func (s *Slack) eventLoop() error {
     }
 }
 
-func (s *Slack) addChannelToList() error {
-
-    return nil
-}
-
 func (s *Slack) updateChannelList() error {
-    s.ApiCall.Lock()
-    defer s.ApiCall.Unlock()
-    s.Api.Ge
+    s.apiCall.Lock()
+    chs, errC := s.Api.GetChannels(true)
+    grs, errG := s.Api.GetGroups(true)
+    s.apiCall.Unlock()
+    if errC == nil {
+        for _, ch := range chs {
+            s.rooms.CreateOrUpdateRoom(ch.Id, ch.Name, 'G')
+        }
+    }
+    if errG == nil {
+        for _, gr := range grs {
+            s.rooms.CreateOrUpdateRoom(gr.Id, gr.Name, 'P')
+        }
+    }
+    log.Info("Rooms: %v", s.rooms)
+
+    if errC != nil {
+        return errC
+    } else if errG != nil {
+        return errG
+    }
     return nil
 }
 
@@ -77,7 +94,7 @@ func (s *Slack) updateChannelList() error {
 func (s *Slack) ChannelLoop() error {
     // get Channels from s.Rtm.GetInfo
     for {
-        time.sleep(60)
+        time.Sleep(30 * time.Second)
         go s.updateChannelList()
     }
     return nil
@@ -97,6 +114,10 @@ func (s *Slack) Connect() error {
     return nil
 }
 
+func (s *Slack) init() {
+    s.rooms = data.NewRooms()
+}
+
 func New(config *config.SlackConfig) *Slack {
     if !mainSlack.configured {
         mainSlack.slackConfig = config
@@ -108,4 +129,5 @@ func New(config *config.SlackConfig) *Slack {
 func init() {
     log = logger.New()
     mainSlack = new(Slack)
+    mainSlack.init()
 }

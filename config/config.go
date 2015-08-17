@@ -94,26 +94,37 @@ func init() {
 
 // Expand '~'-based homedif from the given path
 func ExpandHomedir(s string) (string, error) {
+    const (
+        slash = string(os.PathSeparator)
+        re1   = "~%s"            // regex: /~\//
+        re2   = "~([\\w\\-]+)%s" // regex: /~([\w\-]+)\//
+    )
     var (
         err error
         re  *regexp.Regexp
         u   *user.User
+        rv  string
     )
 
-    if strings.HasPrefix(s, "~/") {
+    if strings.HasPrefix(s, fmt.Sprintf(re1, slash)) {
         u, _ = user.Current()
-        return fmt.Sprintf("%s", u.HomeDir+s[1:]), nil
-    }
-    re = regexp.MustCompile("~([\\w\\-]+)/")
-    if re.MatchString(s) {
+        rv = fmt.Sprintf("%s", u.HomeDir+s[1:])
+        err = nil
+    } else if re = regexp.MustCompile(fmt.Sprintf(re2, slash)); re.MatchString(s) {
         uname := re.FindStringSubmatch(s)[0]
         uname = uname[1 : len(uname)-1]
         if u, _ = user.Lookup(uname); u == nil {
-            return s, err
+            rv = s
+            err = nil
+        } else {
+            rv = u.HomeDir + slash + strings.Join(strings.Split(s, slash)[1:], slash)
+            err = nil
         }
-        return u.HomeDir + "/" + strings.Join(strings.Split(s, string(os.PathSeparator))[1:], string(os.PathSeparator)), nil
     } else if err != nil {
-        return s, err
+        rv = s
+    } else {
+        rv = s
+        err = nil
     }
-    return s, nil
+    return rv, err
 }

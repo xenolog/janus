@@ -104,4 +104,11 @@ func TestExpandHomedir(t *testing.T) {
     } else if rv != path3 {
         t.Errorf("Wrong value returned while expanding homedir into '%s': %s", path3, rv)
     }
+    // path4 := "~/aaa/./bbb/../bbb/ccc/ddd"
+    // path4rv := fmt.Sprintf("%s/aaa/bbb/ccc/ddd", u.HomeDir)
+    // if rv, err := ExpandHomedir(path4); err != nil {
+    //     t.Errorf("Error while expanding homedir into '%s': %s", path4, err)
+    // } else if rv != path4rv {
+    //     t.Errorf("Wrong value returned while expanding homedir into '%s': %s", path4, rv)
+    // }
 }

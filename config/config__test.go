@@ -1,6 +1,8 @@
 package config
 
 import (
+    "fmt"
+    "os/user"
     "testing" //import go package for testing related functionality
 )
 
@@ -77,5 +79,29 @@ func TestParseConfig(t *testing.T) {
 
     if len(cfg.Users) != 2 {
         t.Errorf("Yaml parse failed. 'users' section not found.'%s'", cfg.raw_config)
+    }
+}
+
+func TestExpandHomedir(t *testing.T) {
+    var u *user.User
+    path1 := "/aaa/bbb/ccc/ddd"
+    if rv, err := ExpandHomedir(path1); err != nil {
+        t.Errorf("Error while expanding homedir into '%s': %s", path1, err)
+    } else if rv != path1 {
+        t.Errorf("Wrong value returned while expanding homedir into '%s': %s", path1, rv)
+    }
+    path2 := "~/aaa/bbb/ccc/ddd"
+    u, _ = user.Current()
+    path2rv := fmt.Sprintf("%s/aaa/bbb/ccc/ddd", u.HomeDir)
+    if rv, err := ExpandHomedir(path2); err != nil {
+        t.Errorf("Error while expanding homedir into '%s': %s", path2, err)
+    } else if rv != path2rv {
+        t.Errorf("Wrong value returned while expanding homedir into '%s': %s", path2, rv)
+    }
+    path3 := "~username/aaa/bbb/ccc/ddd"
+    if rv, err := ExpandHomedir(path3); err != nil {
+        t.Errorf("Error while expanding homedir into '%s': %s", path3, err)
+    } else if rv != path3 {
+        t.Errorf("Wrong value returned while expanding homedir into '%s': %s", path3, rv)
     }
 }

@@ -4,6 +4,10 @@ import (
     "fmt"
     "gopkg.in/yaml.v2"
     "io/ioutil"
+    "os"
+    "os/user"
+    "regexp"
+    "strings"
     "time"
 )
 
@@ -79,11 +83,48 @@ func (c *Config) reload() error {
 
 // return singletone config data structure
 func New(path string) (*Config, error) {
-    cfg.path = path
+    cfg.path, _ = ExpandHomedir(path)
     err := cfg.reload()
     return cfg, err
 }
 
 func init() {
     cfg = new(Config)
+}
+
+// Expand '~'-based homedif from the given path
+func ExpandHomedir(s string) (string, error) {
+    const (
+        slash = string(os.PathSeparator)
+        re1   = "~%s"            // regex: /~\//
+        re2   = "~([\\w\\-]+)%s" // regex: /~([\w\-]+)\//
+    )
+    var (
+        err error
+        re  *regexp.Regexp
+        u   *user.User
+        rv  string
+    )
+
+    if strings.HasPrefix(s, fmt.Sprintf(re1, slash)) {
+        u, _ = user.Current()
+        rv = fmt.Sprintf("%s", u.HomeDir+s[1:])
+        err = nil
+    } else if re = regexp.MustCompile(fmt.Sprintf(re2, slash)); re.MatchString(s) {
+        uname := re.FindStringSubmatch(s)[0]
+        uname = uname[1 : len(uname)-1]
+        if u, _ = user.Lookup(uname); u == nil {
+            rv = s
+            err = nil
+        } else {
+            rv = u.HomeDir + slash + strings.Join(strings.Split(s, slash)[1:], slash)
+            err = nil
+        }
+    } else if err != nil {
+        rv = s
+    } else {
+        rv = s
+        err = nil
+    }
+    return rv, err
 }

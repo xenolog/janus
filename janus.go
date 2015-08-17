@@ -2,13 +2,11 @@
 package main
 
 import (
-    "fmt"
     "github.com/codegangsta/cli"
     "github.com/xenolog/janus/config"
     "github.com/xenolog/janus/logger"
     "github.com/xenolog/janus/slack"
     "os"
-    "path/filepath"
     "sync"
 )
 
@@ -70,31 +68,33 @@ func main() {
     App.RunAndExitOnError()
 }
 
-func getConfigAbsName(cfgname string) (string, error) {
-    abs_path, err := filepath.Abs(cfgname)
-    if err != nil {
-        return "", fmt.Errorf("Wrong config path: '%s'", err)
-    }
-    return abs_path, nil
-}
+// func getConfigAbsName(cfgname string) (string, error) {
+//     abs_path, err := filepath.Abs(cfgname)
+//     if err != nil {
+//         return "", fmt.Errorf("Wrong config path: '%s'", err)
+//     }
+//     return abs_path, nil
+// }
 
 func runBot(c *cli.Context) {
     var (
         Sapi     *slack.Slack
         cfg      *config.Config
-        abs_path string
+        cfg_path string
         err      error
         wg       sync.WaitGroup
     )
-    abs_path, err = getConfigAbsName(c.GlobalString("config"))
-    if err != nil {
-        Log.Error("Wrong config path: '%s'", err)
-        return
-    } else {
-        Log.Printf("Config '%s' will be loaded.", c.GlobalString("config"))
-    }
+    cfg_path = c.GlobalString("config")
+    Log.Info("Config '%s' will be loaded.", cfg_path)
+    // abs_path, err = getConfigAbsName(c.GlobalString("config"))
+    // if err != nil {
+    //     Log.Error("Wrong config path: '%s'", err)
+    //     return
+    // } else {
+    //     Log.Printf("Config '%s' will be loaded.", c.GlobalString("config"))
+    // }
 
-    cfg, err = config.New(abs_path)
+    cfg, err = config.New(cfg_path)
     if err != nil {
         Log.Error("Config processing error: %s", err)
         return
@@ -120,18 +120,15 @@ func runBot(c *cli.Context) {
 }
 
 func runTest(c *cli.Context) {
-    var err error
-    var abs_path string
+    var (
+        err         error
+        config_path string
+    )
     Log.Log("Test started")
 
-    if abs_path, err = getConfigAbsName(c.GlobalString("config")); err != nil {
-        Log.Error("Wrong config path: '%s'", err)
-        return
-    } else {
-        Log.Printf("Config '%s' will be loaded.", c.GlobalString("config"))
-    }
-
-    cfg, err := config.New(abs_path)
+    //config_path, err = getConfigAbsName(c.GlobalString("config"))
+    config_path = c.GlobalString("config")
+    cfg, err := config.New(config_path)
     if err != nil {
         Log.Error("Config processing error: %s", err)
     } else {

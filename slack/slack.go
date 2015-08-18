@@ -131,3 +131,5 @@ func init() {
     mainSlack = new(Slack)
     mainSlack.init()
 }
+
+//vim: set ts=4 sw=4 et :

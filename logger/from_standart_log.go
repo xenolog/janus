@@ -1,6 +1,7 @@
 package logger
 
 import (
+    "fmt"
     "runtime"
     "time"
 )
@@ -39,8 +40,7 @@ func itoa(buf *[]byte, i int, wid int) {
     *buf = append(*buf, b[bp:]...)
 }
 
-func (l *Logger) formatHeader(buf *[]byte, t time.Time, facility byte, file string, line int) {
-    //*buf = append(*buf, l.prefix...)
+func (l *Logger) formatHeader(buf *[]byte, t time.Time, prefix string, file string, line int) {
     if l.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
         if l.flag&Ldate != 0 {
             year, month, day := t.Date()
@@ -65,7 +65,8 @@ func (l *Logger) formatHeader(buf *[]byte, t time.Time, facility byte, file stri
             *buf = append(*buf, ' ')
         }
     }
-    *buf = append(*buf, facility)
+    // *buf = append(*buf, fmt.Sprintf("%s", prefix))
+    *buf = append(*buf, fmt.Sprintf(prefix)[0])
     *buf = append(*buf, ' ')
     if l.flag&(Lshortfile|Llongfile) != 0 {
         if l.flag&Lshortfile != 0 {
@@ -92,25 +93,46 @@ func (l *Logger) formatHeader(buf *[]byte, t time.Time, facility byte, file stri
 // provided for generality, although at the moment on all pre-defined
 // paths it will be 2.
 // func (l *Logger) Output(calldepth int, facility string, s string) error {
-func (l *Logger) Output(calldepth int, facility byte, s string) error {
+func (l *Logger) Output(calldepth int, facility int8, s string) error {
     now := time.Now() // get this early.
-    var file string
-    var line int
-    l.mu.Lock()
-    defer l.mu.Unlock()
+    var (
+        file   string
+        line   int
+        prefix string
+    )
+    if facility < l.minFacility {
+        return nil
+    } else {
+        switch facility {
+        case LOG_D:
+            prefix = LOG_Dl
+        case LOG_I:
+            prefix = LOG_Il
+        case LOG_W:
+            prefix = LOG_Wl
+        case LOG_E:
+            prefix = LOG_El
+        case LOG_F:
+            prefix = LOG_Fl
+        default:
+            prefix = LOG_Il
+        }
+    }
+    l.Lock()
+    defer l.Unlock()
     if l.flag&(Lshortfile|Llongfile) != 0 {
         // release lock while getting caller info - it's expensive.
-        l.mu.Unlock()
+        l.Unlock()
         var ok bool
         _, file, line, ok = runtime.Caller(calldepth)
         if !ok {
             file = "???"
             line = 0
         }
-        l.mu.Lock()
+        l.Lock()
     }
     l.buf = l.buf[:0]
-    l.formatHeader(&l.buf, now, facility, file, line) //, facility)
+    l.formatHeader(&l.buf, now, prefix, file, line) //, facility)
     l.buf = append(l.buf, s...)
     if len(s) > 0 && s[len(s)-1] != '\n' {
         l.buf = append(l.buf, '\n')
@@ -118,3 +140,5 @@ func (l *Logger) Output(calldepth int, facility byte, s string) error {
     _, err := l.out.Write(l.buf)
     return err
 }
+
+//vim: set ts=4 sw=4 et :

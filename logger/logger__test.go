@@ -39,3 +39,5 @@ func BenchmarkGetLogger(b *testing.B) {
     // this trick need for avoid compiler optimization
     result = l
 }
+
+//vim: set ts=4 sw=4 et :

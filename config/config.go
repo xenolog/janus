@@ -128,3 +128,5 @@ func ExpandHomedir(s string) (string, error) {
     }
     return rv, err
 }
+
+//vim: set ts=4 sw=4 et :

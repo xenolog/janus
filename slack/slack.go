@@ -65,22 +65,31 @@ func (s *Slack) eventLoop() error {
     }
 }
 
-func (s *Slack) updateChannelList() error {
+func (s *Slack) updateGroupList(groups *[]slacklib.Group) {
+    for _, gr := range *groups {
+        s.rooms.PutBySlackId(gr.Id, gr.Name, data.ACCESS_PRIVATE)
+    }
+}
+
+func (s *Slack) updateChannelList(channels *[]slacklib.Channel) {
+    for _, ch := range *channels {
+        s.rooms.PutBySlackId(ch.Id, ch.Name, data.ACCESS_GROUP)
+    }
+}
+
+// fetch channels and groups from
+func (s *Slack) fetchChannelList() error {
     s.apiCall.Lock()
     chs, errC := s.Api.GetChannels(true)
     grs, errG := s.Api.GetGroups(true)
     s.apiCall.Unlock()
     if errC == nil {
-        for _, ch := range chs {
-            s.rooms.PutBySlackId(ch.Id, ch.Name, 'G')
-        }
+        s.updateChannelList(&chs)
     }
     if errG == nil {
-        for _, gr := range grs {
-            s.rooms.PutBySlackId(gr.Id, gr.Name, 'P')
-        }
+        s.updateGroupList(&grs)
     }
-    log.Info("Rooms: %v", s.rooms)
+    log.Debug("Rooms: \n%s", s.rooms)
 
     if errC != nil {
         return errC
@@ -95,7 +104,7 @@ func (s *Slack) ChannelLoop() error {
     // get Channels from s.Rtm.GetInfo
     for {
         time.Sleep(s.janusConfig.Slack.Channel_update_interval * time.Second)
-        go s.updateChannelList()
+        go s.fetchChannelList()
     }
     return nil
 }
@@ -111,6 +120,12 @@ func (s *Slack) Connect() error {
     s.Api.SetDebug(true)
     s.Rtm = s.Api.NewRTM()
     go mainSlack.Rtm.ManageConnection()
+    // init rooms from on-connect given Info
+    // info := s.Api.GetInfo()
+    // s.updateChannelList(&info.Channels)
+    // s.updateGroupList(&info.Groups)
+    // log.Debug("Rooms: \n%s", s.rooms)
+
     return nil
 }
 

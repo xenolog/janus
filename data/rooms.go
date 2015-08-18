@@ -2,21 +2,28 @@ package data
 
 import (
     "fmt"
+    "gopkg.in/yaml.v2"
     "sync"
+)
+
+const (
+    ACCESS_DIRECT  = 1
+    ACCESS_PRIVATE = 2
+    ACCESS_GROUP   = 4
 )
 
 ////////
 // Chat room structure
 type RoomT struct {
-    sync.Mutex
-    SlackName string
-    SLackID   string
-    Access    byte // may be 'Group', 'Private', 'Direct'
+    sync.Mutex `yaml: mutex, omitempty`
+    SlackName  string
+    SLackID    string // should be in the Slack-specific format
+    Access     int8   // may be ACCESS_[GROUP, PRIVATE, DIRECT]
     // IrcName   string
     // IrcId     string
 }
 
-func (r *RoomT) Update(id string, name string, access byte) {
+func (r *RoomT) Update(id string, name string, access int8) {
     r.Lock()
     defer r.Unlock()
     if id != "" {
@@ -34,11 +41,16 @@ func (r *RoomT) Update(id string, name string, access byte) {
 // Rooms collection
 type RoomsType struct {
     sync.Mutex
-    ByName        map[string]*RoomT
-    BySlackId     map[string]*RoomT
-    AllowedAccess map[byte]bool
+    ByName    map[string]*RoomT
+    BySlackId map[string]*RoomT
     // IrcToName   map[string]*RoomT
     // NameToIrc   map[string]*RoomT
+}
+
+// Stringify for room collection
+func (r *RoomsType) String() string {
+    rv, _ := yaml.Marshal(r.BySlackId)
+    return fmt.Sprintf("%s", rv)
 }
 
 // DeleteBySlackId -- remove room record with given SlackID
@@ -72,10 +84,9 @@ func (r *RoomsType) GetBySlackId(id string) (*RoomT, error) {
 }
 
 // PutBySlackId -- create new room record or modify existing with given SlackID
-func (r *RoomsType) PutBySlackId(id string, name string, access byte) {
+func (r *RoomsType) PutBySlackId(id string, name string, access int8) {
     var (
         room *RoomT
-        aaa  byte
         err  error
     )
     r.Lock()
@@ -87,12 +98,7 @@ func (r *RoomsType) PutBySlackId(id string, name string, access byte) {
     } else {
         // create new
         room = new(RoomT)
-        if r.AllowedAccess[access] {
-            aaa = access
-        } else {
-            aaa = 0
-        }
-        room.Update(id, name, aaa)
+        room.Update(id, name, access)
         r.ByName[name] = room
         r.BySlackId[id] = room
     }
@@ -100,7 +106,6 @@ func (r *RoomsType) PutBySlackId(id string, name string, access byte) {
 
 // Make initialization. Should be used once.
 func (r *RoomsType) init() {
-    r.AllowedAccess = map[byte]bool{'G': true, 'P': true, 'D': true}
     r.ByName = make(map[string]*RoomT)
     r.BySlackId = make(map[string]*RoomT)
 }

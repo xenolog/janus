@@ -12,6 +12,7 @@ import (
 
 ///
 type Slack struct {
+    debug            bool
     configured       bool
     eventLoopRunning bool
     janusConfig      *config.JanusConfig
@@ -118,10 +119,15 @@ func (s *Slack) MessageLoop() error {
     return nil
 }
 
+func (s *Slack) SetDebug(d bool) {
+    s.debug = d
+}
+
+// conect to the slack server
 func (s *Slack) Connect() error {
     //todo: check for alredy connected
     s.Api = slacklib.New(s.janusConfig.Slack.Api_token)
-    s.Api.SetDebug(true)
+    s.Api.SetDebug(s.debug)
     s.Rtm = s.Api.NewRTM()
     // start RTM main loop
     go mainSlack.Rtm.ManageConnection()

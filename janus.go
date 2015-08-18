@@ -98,6 +98,7 @@ func runBot(c *cli.Context) {
     }
 
     Sapi = slack.New(&cfg.Janus)
+    Sapi.SetDebug(c.GlobalBool("debug"))
     Sapi.Connect()
     // start Messsage loop
     wg.Add(1)

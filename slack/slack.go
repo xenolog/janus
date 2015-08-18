@@ -34,53 +34,66 @@ func (s *Slack) eventLoop() error {
     for {
         select {
         case ev := <-s.Rtm.IncomingEvents:
-            log.Info("Event Received: %v", ev.Data)
+            log.Debug("Event Received: %v", ev.Data)
             switch evt := ev.Data.(type) {
             case *slacklib.HelloEvent:
                 // Ignore hello
-                log.Info("Hello event: %v", ev.Data)
+                log.Debug("Hello event: %v", ev.Data)
 
             case *slacklib.ConnectedEvent:
-                log.Info("Infos:", evt.Info)
-                log.Info("Connection counter: %d", evt.ConnectionCount)
+                // init room structure by data, given at connection
+                s.updateChannelList(&evt.Info.Channels)
+                s.updateGroupList(&evt.Info.Groups)
+                log.Debug("Rooms: \n%s", s.rooms)
+
+                log.Debug("Connection counter: %d", evt.ConnectionCount)
                 //s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "#general"))
-                s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "C08RDQTFY"))
+                //s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "C08RDQTFY"))
 
             case *slacklib.MessageEvent:
-                log.Info("Message: %v", evt)
+                log.Debug("Message: %v", evt)
                 // if private message given
-                log.Info("Presence Change: %v", evt)
+                log.Debug("Presence Change: %v", evt)
 
             case *slacklib.LatencyReport:
-                //log.Info("Current latency: %v", evt.Value)
+                //log.Debug("Current latency: %v", evt.Value)
 
             case *slacklib.SlackWSError:
                 log.Warn("Slack error: %d - %v", evt.Code, evt.Msg)
 
             default:
                 // Ignore other events..
-                log.Warn("Unexpected event: %v", ev.Data)
+                log.Debug("Unexpected event: %v", ev.Data)
             }
         }
     }
 }
 
-func (s *Slack) updateChannelList() error {
+func (s *Slack) updateGroupList(groups *[]slacklib.Group) {
+    for _, gr := range *groups {
+        s.rooms.PutBySlackId(gr.Id, gr.Name, data.ACCESS_PRIVATE)
+    }
+}
+
+func (s *Slack) updateChannelList(channels *[]slacklib.Channel) {
+    for _, ch := range *channels {
+        s.rooms.PutBySlackId(ch.Id, ch.Name, data.ACCESS_GROUP)
+    }
+}
+
+// fetch channels and groups from
+func (s *Slack) fetchChannelList() error {
     s.apiCall.Lock()
     chs, errC := s.Api.GetChannels(true)
     grs, errG := s.Api.GetGroups(true)
     s.apiCall.Unlock()
     if errC == nil {
-        for _, ch := range chs {
-            s.rooms.PutBySlackId(ch.Id, ch.Name, 'G')
-        }
+        s.updateChannelList(&chs)
     }
     if errG == nil {
-        for _, gr := range grs {
-            s.rooms.PutBySlackId(gr.Id, gr.Name, 'P')
-        }
+        s.updateGroupList(&grs)
     }
-    log.Info("Rooms: %v", s.rooms)
+    log.Debug("Rooms: \n%s", s.rooms)
 
     if errC != nil {
         return errC
@@ -95,7 +108,7 @@ func (s *Slack) ChannelLoop() error {
     // get Channels from s.Rtm.GetInfo
     for {
         time.Sleep(s.janusConfig.Slack.Channel_update_interval * time.Second)
-        go s.updateChannelList()
+        go s.fetchChannelList()
     }
     return nil
 }
@@ -110,7 +123,9 @@ func (s *Slack) Connect() error {
     s.Api = slacklib.New(s.janusConfig.Slack.Api_token)
     s.Api.SetDebug(true)
     s.Rtm = s.Api.NewRTM()
+    // start RTM main loop
     go mainSlack.Rtm.ManageConnection()
+
     return nil
 }
 

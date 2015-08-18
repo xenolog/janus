@@ -69,3 +69,5 @@ func New() *Logger {
 func init() {
     main_logger = new(Logger)
 }
+
+//vim: set ts=4 sw=4 et :

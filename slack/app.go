@@ -80,3 +80,5 @@ type SlackApp struct {
 // func RunApp(msg, client *Slack) {
 
 // }
+
+//vim: set ts=4 sw=4 et :

@@ -112,3 +112,5 @@ func TestExpandHomedir(t *testing.T) {
     //     t.Errorf("Wrong value returned while expanding homedir into '%s': %s", path4, rv)
     // }
 }
+
+//vim: set ts=4 sw=4 et :

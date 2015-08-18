@@ -30,3 +30,5 @@ func (l *Logger) Fail(format string, v ...interface{}) {
     l.Output(2, 'F', fmt.Sprintf(format, v...))
     os.Exit(1)
 }
+
+//vim: set ts=4 sw=4 et :

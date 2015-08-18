@@ -18,3 +18,5 @@ func (l *Logger) Println(format string, v ...interface{}) {
 func (l *Logger) Errorf(format string, v ...interface{}) {
     l.Output(2, 'E', fmt.Sprintf(format, v...))
 }
+
+//vim: set ts=4 sw=4 et :

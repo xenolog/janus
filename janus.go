@@ -86,14 +86,6 @@ func runBot(c *cli.Context) {
     )
     cfg_path = c.GlobalString("config")
     Log.Info("Config '%s' will be loaded.", cfg_path)
-    // abs_path, err = getConfigAbsName(c.GlobalString("config"))
-    // if err != nil {
-    //     Log.Error("Wrong config path: '%s'", err)
-    //     return
-    // } else {
-    //     Log.Printf("Config '%s' will be loaded.", c.GlobalString("config"))
-    // }
-
     cfg, err = config.New(cfg_path)
     if err != nil {
         Log.Error("Config processing error: %s", err)
@@ -120,21 +112,9 @@ func runBot(c *cli.Context) {
 }
 
 func runTest(c *cli.Context) {
-    var (
-        err         error
-        config_path string
-    )
     Log.Log("Test started")
 
-    //config_path, err = getConfigAbsName(c.GlobalString("config"))
-    config_path = c.GlobalString("config")
-    cfg, err := config.New(config_path)
-    if err != nil {
-        Log.Error("Config processing error: %s", err)
-    } else {
-        Log.Info("config: '%s'", cfg)
-        Log.Info("xxx: '%s'", cfg.Users["xenolog"].Irc.Username)
-        Log.Info("xxx: '%s'", cfg.Users["xenolog"].Irc.Password)
-    }
     Log.Log("Test completed")
 }
+
+//vim: set ts=4 sw=4 et :

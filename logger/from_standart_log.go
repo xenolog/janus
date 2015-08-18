@@ -118,3 +118,5 @@ func (l *Logger) Output(calldepth int, facility byte, s string) error {
     _, err := l.out.Write(l.buf)
     return err
 }
+
+//vim: set ts=4 sw=4 et :

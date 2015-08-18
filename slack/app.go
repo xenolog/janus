@@ -28,19 +28,19 @@ func (e *DialogAppType) GetResponseMsgText() string {
 }
 
 // run created app. May be started as go-routine
-func (e *DialogAppType) RunApp() {
-    cmd := strings.Split(e.SlackMsg.Text, "\n")[0]
+func (e *DialogAppType) RunApp(msg slacklib.Msg) {
+    cmd := strings.Split(msg.Text, "\n")[0]
     log.Debug("Slack DialogApp command: '%s'", cmd)
     e.Run(strings.Fields(cmd))
     log.Debug("response> %s", e.responseMsgText)
 }
 
 // create App for Dialog req
-func NewDialogApp(msg *slacklib.Msg, client *Slack) *DialogAppType {
+func NewDialogApp(client *Slack) *DialogAppType {
     App := new(DialogAppType)
     App.Name = "Janus"
     App.Usage = "slack communication BOT"
-    App.Version = "0.0.0"
+    App.HideVersion = true
     App.BashComplete = gangstalib.DefaultAppComplete
     // App.Action = helpCommand.Action
     // App.Compiled = compileTime()
@@ -71,7 +71,7 @@ func NewDialogApp(msg *slacklib.Msg, client *Slack) *DialogAppType {
     }
 
     App.Before = func(c *gangstalib.Context) error {
-        //Log.Println("Janus started.")
+        log.Debug("DialogApp 'before'")
         return nil
     }
     // App.CommandNotFound = func(c *gangstalib.Context, cmd string) {
@@ -79,7 +79,6 @@ func NewDialogApp(msg *slacklib.Msg, client *Slack) *DialogAppType {
     //     os.Exit(1)
     // }
     App.SlackClient = client
-    App.SlackMsg = msg
     return App
 }
 

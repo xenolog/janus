@@ -6,6 +6,7 @@ import (
     "github.com/xenolog/janus/config"
     "github.com/xenolog/janus/data"
     "github.com/xenolog/janus/logger"
+    "gopkg.in/yaml.v2"
     "sync"
     "time"
 )
@@ -52,9 +53,13 @@ func (s *Slack) eventLoop() error {
                 //s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "C08RDQTFY"))
 
             case *slacklib.MessageEvent:
-                log.Debug("Message: %v", evt)
+                rv, _ := yaml.Marshal(evt)
+                log.Debug("Message:\n%s", rv)
                 // if private message given
-                log.Debug("Presence Change: %v", evt)
+                if evt.Msg.ChannelId[0] == "D"[0] { // todo: also handle addressed message in channel
+                    // dialogapp := NewDialogApp(&evt.Msg, s)
+                    NewDialogApp(&evt.Msg, s)
+                }
 
             case *slacklib.LatencyReport:
                 //log.Debug("Current latency: %v", evt.Value)

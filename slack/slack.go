@@ -34,32 +34,36 @@ func (s *Slack) eventLoop() error {
     for {
         select {
         case ev := <-s.Rtm.IncomingEvents:
-            log.Info("Event Received: %v", ev.Data)
+            log.Debug("Event Received: %v", ev.Data)
             switch evt := ev.Data.(type) {
             case *slacklib.HelloEvent:
                 // Ignore hello
-                log.Info("Hello event: %v", ev.Data)
+                log.Debug("Hello event: %v", ev.Data)
 
             case *slacklib.ConnectedEvent:
-                log.Info("Infos:", evt.Info)
-                log.Info("Connection counter: %d", evt.ConnectionCount)
+                // init room structure by data, given at connection
+                s.updateChannelList(&evt.Info.Channels)
+                s.updateGroupList(&evt.Info.Groups)
+                log.Debug("Rooms: \n%s", s.rooms)
+
+                log.Debug("Connection counter: %d", evt.ConnectionCount)
                 //s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "#general"))
-                s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "C08RDQTFY"))
+                //s.Rtm.SendMessage(s.Rtm.NewOutgoingMessage("Hello world", "C08RDQTFY"))
 
             case *slacklib.MessageEvent:
-                log.Info("Message: %v", evt)
+                log.Debug("Message: %v", evt)
                 // if private message given
-                log.Info("Presence Change: %v", evt)
+                log.Debug("Presence Change: %v", evt)
 
             case *slacklib.LatencyReport:
-                //log.Info("Current latency: %v", evt.Value)
+                //log.Debug("Current latency: %v", evt.Value)
 
             case *slacklib.SlackWSError:
                 log.Warn("Slack error: %d - %v", evt.Code, evt.Msg)
 
             default:
                 // Ignore other events..
-                log.Warn("Unexpected event: %v", ev.Data)
+                log.Debug("Unexpected event: %v", ev.Data)
             }
         }
     }
@@ -119,12 +123,8 @@ func (s *Slack) Connect() error {
     s.Api = slacklib.New(s.janusConfig.Slack.Api_token)
     s.Api.SetDebug(true)
     s.Rtm = s.Api.NewRTM()
+    // start RTM main loop
     go mainSlack.Rtm.ManageConnection()
-    // init rooms from on-connect given Info
-    // info := s.Api.GetInfo()
-    // s.updateChannelList(&info.Channels)
-    // s.updateGroupList(&info.Groups)
-    // log.Debug("Rooms: \n%s", s.rooms)
 
     return nil
 }

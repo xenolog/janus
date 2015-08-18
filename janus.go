@@ -55,7 +55,12 @@ func init() {
     },
     }
     App.Before = func(c *cli.Context) error {
-        Log.Println("Janus started.")
+        Log.Info("Janus started.")
+        if c.GlobalBool("debug") {
+            Log.SetMinimalFacility(logger.LOG_D)
+        } else {
+            Log.SetMinimalFacility(logger.LOG_I)
+        }
         return nil
     }
     App.CommandNotFound = func(c *cli.Context, cmd string) {
@@ -113,7 +118,7 @@ func runBot(c *cli.Context) {
 
 func runTest(c *cli.Context) {
     Log.Log("Test started")
-
+    Log.Debug("XXX")
     Log.Log("Test completed")
 }
 

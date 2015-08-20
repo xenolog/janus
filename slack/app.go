@@ -41,9 +41,11 @@ func NewDialogApp(client *Slack) *DialogAppType {
     App.Name = "Janus"
     App.Usage = "slack communication BOT"
     App.HideVersion = true
-    App.BashComplete = gangstalib.DefaultAppComplete
-    // App.Action = helpCommand.Action
+    //App.BashComplete = gangstalib.DefaultAppComplete
     // App.Compiled = compileTime()
+    App.Action = func(c *gangstalib.Context) {
+        log.Debug("DialogApp 'App.Action'")
+    }
     App.Writer = App
     App.Flags = []gangstalib.Flag{
         gangstalib.BoolFlag{

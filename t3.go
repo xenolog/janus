@@ -40,9 +40,18 @@ func (s *LibType) AddToBuff(data string) {
     if _, err := s.Write([]byte(data)); err != nil {
         s.log.Debug("Can't collect string '%s':%v", data, err)
     } else {
-
         s.log.Debug("String '%s' successfully collected in buffer", data)
     }
+}
+
+func (s *LibType) CallApp() { //ee interface{}) {
+    s.log.Debug("Before start AppFunction")
+    func() {
+        defer s.log.Debug("1-st Defer for AppFunction")
+        s.log.Debug("AppFunction running")
+        defer s.log.Debug("2-nd Defer for AppFunction")
+    }()
+    s.log.Debug("After start AppFunction")
 }
 
 func NewLibType(log *logger.Logger) *LibType {
@@ -63,12 +72,12 @@ func init() {
 }
 
 func main() {
-
     fmt.Printf("Testing Lib directly...\n")
     ll := NewLibType(Log)
     ll.AddToBuff("xxx")
     ll.AddToBuff("yyy")
     ll.AddToBuff("zzz")
+    ll.CallApp()
     Log.Info("%v", *ll.GlobalMethod())
     Log.Info("=> %s", *ll.GlobalMethod())
     fmt.Printf("Testing Lib throught module usage...\n")

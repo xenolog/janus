@@ -59,7 +59,15 @@ func (s *Slack) eventLoop() error {
                 if evt.Msg.ChannelId[0] == "D"[0] { // todo: also handle addressed message in channel
                     // dialogapp := NewDialogApp(&evt.Msg, s)
                     dialog := NewDialogApp(s)
-                    go dialog.RunApp(evt.Msg)
+                    go func() {
+                        dialog.RunApp(evt.Msg)
+                        log.Debug("DialogApp 'after' start")
+                        outMsg := dialog.SlackClient.Rtm.NewOutgoingMessage(
+                            dialog.GetResponseMsgText(),
+                            dialog.GetSlackMsg().ChannelId)
+                        dialog.SlackClient.Rtm.SendMessage(outMsg)
+                        log.Debug("DialogApp 'after' end")
+                    }()
                 }
 
             case *slacklib.LatencyReport:

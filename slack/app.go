@@ -17,22 +17,40 @@ type DialogAppType struct {
 }
 
 // io.Writer compatible writer for
-func (e *DialogAppType) Write(p []byte) (n int, err error) {
-    *e.responseMsgText = append(*e.responseMsgText, p...)
+func (e *DialogAppType) Write(p []byte) (int, error) {
+    if e.responseMsgText == nil {
+        e.responseMsgText = &p
+    } else {
+        *e.responseMsgText = append(*e.responseMsgText, p...)
+    }
     return len(p), nil
 }
 
 // Return response message text
 func (e *DialogAppType) GetResponseMsgText() string {
-    return fmt.Sprintf("%s", e.responseMsgText)
+    return fmt.Sprintf("%s", *e.responseMsgText)
 }
+
+func (e *DialogAppType) GetSlackClient() *Slack {
+    return e.SlackClient
+}
+
+func (e *DialogAppType) GetSlackMsg() slacklib.Msg {
+    return *e.SlackMsg
+}
+
+// type DialogAppInterface interface {
+//     GetResponseMsgText()
+//     GetSlackClient()
+//     GetSlackMsg()
+// }
 
 // run created app. May be started as go-routine
 func (e *DialogAppType) RunApp(msg slacklib.Msg) {
     cmd := strings.Split(msg.Text, "\n")[0]
     log.Debug("Slack DialogApp command: '%s'", cmd)
     e.Run(strings.Fields(cmd))
-    log.Debug("response> %s", e.responseMsgText)
+    log.Debug("response> %s", *e.responseMsgText)
 }
 
 // create App for Dialog req
@@ -44,15 +62,22 @@ func NewDialogApp(client *Slack) *DialogAppType {
     //App.BashComplete = gangstalib.DefaultAppComplete
     // App.Compiled = compileTime()
     App.Action = func(c *gangstalib.Context) {
-        log.Debug("DialogApp 'App.Action'")
+        log.Debug("DialogApp 'App.Action: Start'")
+        args := c.Args()
+        if args.Present() {
+            gangstalib.ShowCommandHelp(c, args.First())
+        } else {
+            gangstalib.ShowSubcommandHelp(c)
+        }
+        log.Debug("DialogApp 'App.Action: End'")
     }
     App.Writer = App
-    App.Flags = []gangstalib.Flag{
-        gangstalib.BoolFlag{
-            Name:  "debug",
-            Usage: "Enable debug mode. Show more output",
-        },
-    }
+    // App.Flags = []gangstalib.Flag{
+    //     gangstalib.BoolFlag{
+    //         Name:  "debug",
+    //         Usage: "Enable debug mode. Show more output",
+    //     },
+    // }
     App.Commands = []gangstalib.Command{{
         Name:  "irc",
         Usage: "irc-related commands",
@@ -76,6 +101,7 @@ func NewDialogApp(client *Slack) *DialogAppType {
         log.Debug("DialogApp 'before'")
         return nil
     }
+
     // App.CommandNotFound = func(c *gangstalib.Context, cmd string) {
     //     Log.Printf("Wrong command '%s'", cmd)
     //     os.Exit(1)
